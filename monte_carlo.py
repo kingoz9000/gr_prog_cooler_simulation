@@ -1,5 +1,7 @@
-from termostat import ThermostatSimple
 from kølerum import Kølerum
+from termostat import ThermostatSimple
+
+
 class MonteCarlo:
     def __init__(self):
         self.temperature_logs = []  

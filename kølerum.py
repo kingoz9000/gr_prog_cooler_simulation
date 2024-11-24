@@ -1,3 +1,5 @@
+import csv
+import math
 import random
 from termostat import ThermostatSimple, ThermostatSmart
 import math
@@ -16,7 +18,7 @@ class Kølerum:
         self.delta_t = 300
         self.t_start = 5
         self.t_target = 5
-        
+
         self.t_current = self.t_start
         self.door_open = False
         self.compressor_on = False
@@ -49,11 +51,11 @@ class Kølerum:
         """
         if door: # Døren er åben
             c_1 = 3 * (10**-5)
-        else: # Døren er lukket
-            c_1 = 5* (10**-7)
-        if compressor: # Kompr tændt
+        else:  # Døren er lukket
+            c_1 = 5 * (10**-7)
+        if compressor:  # Kompr tændt
             c_2 = 8 * (10**-6)
-        else: # Kompr slukket
+        else:  # Kompr slukket
             c_2 = 0
         return c_1, c_2
     
@@ -92,9 +94,9 @@ class Kølerum:
         """Calculates the food wasted if any and adds to a list for a total count pr. day
         """
         if self.t_current < 3.5:
-            self.food_waste.append(4.39 * math.exp(-0.49*self.t_current))
+            self.food_waste.append(4.39 * math.exp(-0.49 * self.t_current))
         elif self.t_current > 6.5:
-            self.food_waste.append(0.11 * math.exp(0.31*self.t_current))
+            self.food_waste.append(0.11 * math.exp(0.31 * self.t_current))
         else:
             self.food_waste.append(0)
             

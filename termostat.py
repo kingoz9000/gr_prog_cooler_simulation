@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
+
+
 class Thermostat(ABC):
     pass
+
     @abstractmethod
     def update_compressor(self):
         pass
