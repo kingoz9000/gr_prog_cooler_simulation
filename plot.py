@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from monte_carlo import MonteCarlo
-
+import pandas as pd
 
 class CoolingPlotter:
     def __init__(self, months=10):
@@ -29,6 +29,15 @@ class CoolingPlotter:
                 "food_waste": self.smart_data["food_waste_logs"][0][:7 * 24 * 2],
             }
         }
+
+    def make_dataframe(self):
+        df_weekly = pd.DataFrame(self.simple_data['electricity_logs'])
+        df_weekly["Accumuleret strøm"] = df_weekly['electricity_logs'].cumsum()
+        pd.set_option('display.max_rows', None)  # Show all rows
+        pd.set_option('display.max_columns', None)  # Show all columns
+        pd.set_option('display.expand_frame_repr', False)  # Prevent wrapping
+        print(df_weekly)
+
 
     def prepare_monthly_data(self):
         """Calculates total costs per month for electricity and food waste."""
@@ -149,13 +158,15 @@ if __name__ == "__main__":
     plotter = CoolingPlotter()
 
     # Plot electricity costs for both thermostats
-    plotter.plot_weekly_data(mode="together", data_type="electricity")
+   # plotter.plot_weekly_data(mode="together", data_type="electricity")
 
     # Plot food waste for smart thermostat only
-    plotter.plot_weekly_data(mode="smart", data_type="food_waste")
+   # plotter.plot_weekly_data(mode="smart", data_type="food_waste")
 
     # Plot temperatures for simple thermostat only
-    plotter.plot_weekly_data(mode="simple", data_type="temperature")
+   # plotter.plot_weekly_data(mode="simple", data_type="temperature")
 
     # Plot total cost histograms for both
-    plotter.plot_total_cost_histogram(mode="together")
+   # plotter.plot_total_cost_histogram(mode="together")
+
+    plotter.make_dataframe()
