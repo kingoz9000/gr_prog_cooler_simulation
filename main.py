@@ -10,7 +10,7 @@ from monte_carlo import MonteCarlo
 from dataframes import CoolingPlotter
 import PySimpleGUI as sg
 # import various funtions from matplotlib
-import matplotlib 
+from matplotlib import use 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import threading
@@ -23,7 +23,7 @@ import csv
 with open("elpris.csv") as elpris:
         energy_prices = list(csv.DictReader(elpris))
 # Use the TkAgg backend for embedding matplotlib plots in the GUI
-matplotlib.use("TkAgg")
+use("TkAgg")
 
 # =============================================================================
 # Helper Functions
