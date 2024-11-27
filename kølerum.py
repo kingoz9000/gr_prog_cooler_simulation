@@ -1,48 +1,48 @@
-import csv
+
 import math
 import random
 
-from termostat import Thermostat, ThermostatSimple, ThermostatSmart
+from termostat import Thermostat
 
 
 class Kølerum:
-    def __init__(self, thermostat: Thermostat):
-        """Initializes the room cooler
+    def __init__(self, thermostat: Thermostat, energy_prices):
 
-        Args:
-            termostat (str, optional): pick a thermostat. Defaults to "simple".
-        """
-        self.t_rum = 20
-        self.t_komp = -5
-        self.delta_t = 300
-        self.t_start = 5
-        self.t_target = 5
+        self.t_rum = 20 # Rumtemperatur
+        self.t_komp = -5 # Kompressorens køletemperatur
+        self.delta_t = 300 # 5 minutter
+        self.t_start = 5 # Starttemperatur
+        self.t_target = 5 # Mål for temperatur
 
-        self.t_current = self.t_start
-        self.door_open = False
-        self.compressor_on = False
+        self.t_current = self.t_start # Starter på 5 grader men ændres
+        self.door_open = False # Døren er lukket til at starte med
+        self.compressor_on = False # Kompressoren er slukket til at starte med
 
-        self.n = 0
-        self.food_waste = []
-        self.temps = []
-        self.electricity_cost = []
-        self.general_cost = []
+        self.n = 0 # 0 minutter er gået
+        self.food_waste = [] # Madspild
+        self.temps = [] # Temperatur
+        self.electricity_cost = [] # Elpris
+        self.general_cost = [] # Samlet pris
         # Opens electricity prices
-        with open("elpris.csv") as elpris:
-            self.rows = list(csv.DictReader(elpris))
+       
+        self.energy_prices = energy_prices
         # Picks thermostat
-        self.termostat = thermostat or ThermostatSimple(5)
+        self.termostat = thermostat
 
-    def decide_constants(self, door, compressor) -> float:
-        """Decides what constants to use based on whether the compressor
-        and/or the door is open
+    def decide_constants(self, door: bool, compressor: bool) -> float:
+        """Bestemmer hvilke konstanter der skal bruges til at beregne temperaturen
 
         Args:
             door (bool): True if open
             compressor (bool): True if on
 
         Returns:
-            float: The two constants for the door and compressor
+            float: the constants
+            
+        Examples:
+            >>> k = Kølerum(thermostat=None, energy_prices=[])
+            >>> k.decide_constants(True, True)
+            (3.0000000000000004e-05, 8e-06)
         """
         if door:  # Døren er åben
             c_1 = 3 * (10**-5)
@@ -55,60 +55,72 @@ class Kølerum:
         return c_1, c_2
 
     def decide_door(self, percentage=0.1) -> bool:
-        """Decides whether the door to the cooler is open
+        """Bestemmer om døren skal være åben eller lukket
 
         Args:
-            percentage (float, optional): Percentage change for the door to be open (10%). Defaults to 0.1.
+            percentage (float, optional): Procent chance for at døren er åben (10%). Defaults to 0.1.
 
         Returns:
-            _type_: bool
+            _type_: bool - True if open
+        Examples:
+            >>> k = Kølerum(thermostat=None, energy_prices=[])
+            >>> random.seed(0)
+            >>> k.decide_door(1.0)
+            True
+            >>> k.decide_door(0.0)
+            False
         """
         return random.random() <= percentage
 
     def get_new_temperature(self) -> float:
-        """Handles the temperature and moving the discrete time by 5 min
+        """Beregner den nye temperatur og inkrementerer n med steps på 5 minutter
 
         Returns:
             _type_: new temperature
         """
-        self.temps.append(self.t_current)
-        self.door_open = self.decide_door()
-        self.compressor_on = self.termostat.update_compressor(self.t_current, self.n)
-        (
-            c_1,
-            c_2,
-        ) = self.decide_constants(self.door_open, self.compressor_on)
+        self.temps.append(self.t_current) # Tilføjer temperaturen til en liste
+        self.door_open = self.decide_door() # Bestemmer om døren er åben
+        self.compressor_on = self.termostat.update_compressor(self.t_current, self.n) # Bestemmer om kompressoren er tændt
+        c_1, c_2 = self.decide_constants(self.door_open, self.compressor_on) # Bestemmer konstanterne
 
+        delta_t_current_rum = self.t_rum - self.t_current
+        delta_t_current_komp = self.t_komp - self.t_current
         new_temp = (
             self.t_current
             + (
-                c_1 * (self.t_rum - self.t_current)
-                + c_2 * (self.t_komp - self.t_current)
+                c_1 * delta_t_current_rum
+                + c_2 * delta_t_current_komp
             )
             * self.delta_t
-        )
-        self.t_current = new_temp
-        self.n += 1
+        ) # Beregner den nye temperatur
+        self.t_current = new_temp # Opdaterer temperaturen
+        self.n += 1 # Inkrementerer n
         return new_temp
 
     def calculate_food_waste(self) -> None:
-        """Calculates the food wasted if any and adds to a list for a total count pr. day"""
+        """Beregner madspildet og tilføjer det til en liste for en total pr. måned
+        """
         if self.t_current < 3.5:
-            self.food_waste.append(4.39 * math.exp(-0.49 * self.t_current))
+            self.food_waste.append(4.39 * math.exp(-0.49 * self.t_current)) # Frostskade
         elif self.t_current > 6.5:
-            self.food_waste.append(0.11 * math.exp(0.31 * self.t_current))
+            self.food_waste.append(0.11 * math.exp(0.31 * self.t_current)) # Bakterievækst
         else:
-            self.food_waste.append(0)
+            self.food_waste.append(0) # Ingen madspild
 
     def calculate_electricity_price(self) -> None:
-        """Calculates the price for electricity if the compressor is on and adds it to a list for a total count pr. day"""
+        """Bereneger elprisen og tilføjer det til en liste for en total pr. måned
+        """
         if self.compressor_on:
-            self.electricity_cost.append(float(self.rows[self.n]["Pris"]))
+            self.electricity_cost.append(float(self.energy_prices[self.n]["Pris"])) # Hvis kompressoren er tændt
         else:
-            self.electricity_cost.append(0)
+            self.electricity_cost.append(0) # Hvis kompressoren er slukket
 
-    def sum_up_cost(self) -> int:
-        """Sums up the cost of the electricity and food waste"""
+    def sum_up_cost(self) -> dict:
+        """Sumerer alt dataen og returnerer det
+
+        Returns:
+            dict: a collection of the data
+        """
         return {
             "temperature_log": self.temps,
             "electricity_log": self.electricity_cost,
@@ -116,27 +128,33 @@ class Kølerum:
             "total_cost": sum(self.electricity_cost) + sum(self.food_waste),
         }
 
-    def main(self):
+    def step(self):
+        """Kører simulationen for 5 minutter"""
         self.calculate_food_waste()
         self.calculate_electricity_price()
         self.get_new_temperature()
 
     def run_simulation(self):
-        for n in range(8640):
-            self.main()
+        """Kører simulationen for en måned"""
+        for _ in range(8640):
+            self.step()
         return self.sum_up_cost()
 
-    def reset(self):
-        self.t_current = self.t_start
-        self.n = 0
-        self.food_waste.clear()
-        self.temps.clear()
-        self.electricity_cost.clear()
 
 
+# Dette er blot for at det er muligt at se hvad hvert enkelt modul gør
 if __name__ == "__main__":
-    KØL = Kølerum(thermostat=ThermostatSmart())
-    KØL.main()
-    print(KØL.sum_up_cost())
-    # print(KØL.temps)
-    # print(KØL.general_cost)
+    from termostat import ThermostatSemiSmart, ThermostatSimple
+    import csv
+    import doctest
+    with open("elpris.csv") as elpris:
+        energy_prices = list(csv.DictReader(elpris))
+
+    
+    # Create an instance of ThermostatSemiSmart
+    thermostat = ThermostatSemiSmart(energy_prices)
+    
+    # Create an instance of Kølerum with the thermostat instance
+    KØL = Kølerum(thermostat=thermostat, energy_prices=energy_prices)
+    print(doctest.testmod())
+    

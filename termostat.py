@@ -1,3 +1,8 @@
+"""Dette modul indeholder klasser til at styre termostater.
+
+    Returns:
+        bool: True hvis kompressoren skal tændes, ellers False.
+"""
 import csv
 from abc import ABC, abstractmethod
 
@@ -14,14 +19,14 @@ class Thermostat(ABC):
 
 
 class ThermostatSimple(Thermostat):
-    def __init__(self):
-        self.t_target = 5 
+    def __init__(self, energy_prices=None):
+        self.t_target = 5
 
     def update_compressor(self, t_current, n):
         return t_current > self.t_target
 
 
-class ThermostatSmart(Thermostat):
+class ThermostatSemiSmart(Thermostat):
     def __init__(self, energy_prices=None):
         self.t_target = 6 
         self.n = 0

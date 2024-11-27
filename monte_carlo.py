@@ -1,66 +1,77 @@
+"""Dette modul styrer Monte Carlo-simuleringen af kølerummet.
+
+    Returns:
+        dict: Samlede resultater af simuleringen.
+"""
+
 from kølerum import Kølerum
-from termostat import ThermostatSimple, ThermostatSmart
+
+
 class MonteCarlo:
-    def __init__(self, kølerum):
-        """
-        Initializes the Monte Carlo simulation with a provided Kølerum instance.
+    def __init__(self, kølerum, progress_bar=None):
+        """Initializes the Monte Carlo simulation.
 
         Args:
-            kølerum (Kølerum): An initialized Kølerum object with the desired thermostat.
+            kølerum (class): En instans af Kølerum med et termostat.
+            progress_bar (sg.ProgressBar, optional): En progress bar for at vise fremdrift. Defaults to None.
+        Examples:
+            >>> from kølerum import Kølerum
+            >>> mc = MonteCarlo(kølerum=Kølerum(thermostat=None, energy_prices=[]))
+            >>> isinstance(mc.kølerum_template, Kølerum)
+            True
+            >>> mc.temperature_logs == []
+            True
+            >>> mc.electricity_logs == []
+            True
         """
-        self.kølerum_template = kølerum
-        self.temperature_logs = []
-        self.electricity_logs = []
-        self.food_waste_logs = []
-        self.monthly_total_costs = []
-
+        self.kølerum_template = kølerum # Kølerummet
+        self.temperature_logs = [] # Temperaturlog for hele simuleringen
+        self.electricity_logs = [] # Elforbrugslog for hele simuleringen
+        self.food_waste_logs = [] # Madspildslog for hele simuleringen
+        self.monthly_total_costs = [] # Samlet pris for hele simuleringen
+        self.progress_bar = progress_bar # Progress bar for at vise fremdrift
+        
     def run_simulation(self, months=12):
-        """
-        Runs the simulation for the specified number of months.
+        """Kører simuleringen for et antal måneder.
 
         Args:
-            months (int): Number of months to simulate.
+            months (int, optional): how many months to simulate Defaults to 12.
 
         Returns:
-            dict: Aggregated simulation results.
+            dict: collected data from the simulation
         """
-        for _ in range(months):
-            # Reinitialize Kølerum for each month
-            kølerum = Kølerum(thermostat=self.kølerum_template.termostat)
+        for month in range(months):
+            kølerum = Kølerum(thermostat=self.kølerum_template.termostat, energy_prices=self.kølerum_template.energy_prices) 
 
-            # Run simulation for one month
-            month_data = kølerum.run_simulation()
+            month_data = kølerum.run_simulation() # Kører simuleringen for en måned
 
-            # Aggregate results
+            # Samler dataen for hele simuleringen
             self.temperature_logs.append(month_data["temperature_log"])
             self.electricity_logs.append(month_data["electricity_log"])
             self.food_waste_logs.append(month_data["food_waste_log"])
             self.monthly_total_costs.append(month_data["total_cost"])
-
+            
+            # Giver fremdrift til progress bar
+            if self.progress_bar:
+                self.progress_bar.UpdateBar((month + 1) * 100 // months)
+                
         return {
             "temperature_logs": self.temperature_logs,
             "electricity_logs": self.electricity_logs,
             "food_waste_logs": self.food_waste_logs,
-            "monthly_total_costs": self.monthly_total_costs,
         }
+        
+
+# Dette er blot for at det er muligt at se hvad hvert enkelt modul gør
 if __name__ == "__main__":
-    # Create instances of the thermostats
-    simple_thermostat = ThermostatSimple(t_target=5)
-    smart_thermostat = ThermostatSmart(t_target=6)
+    import csv
+    from termostat import ThermostatSemiSmart
+    import doctest
+    with open("elpris.csv") as elpris:
+        energy_prices = list(csv.DictReader(elpris))
 
-    # Create Kølerum objects with the respective thermostats
-    kølerum_simple = Kølerum(thermostat=simple_thermostat)
-    kølerum_smart = Kølerum(thermostat=smart_thermostat)
-
-    # Initialize Monte Carlo simulations
-    mc_simple = MonteCarlo(kølerum_simple)
-    mc_smart = MonteCarlo(kølerum_smart)
-
-    # Run simulations for 12 months
-    simple_data = mc_simple.run_simulation(months=12)
-    smart_data = mc_smart.run_simulation(months=12)
-
-    # Print aggregated results
-    print("Simple Data:", simple_data)
-    print("Smart Data:", smart_data)
-
+    monte_carlo = MonteCarlo(Kølerum(ThermostatSemiSmart(energy_prices), energy_prices))
+    
+    monte_carlo.run_simulation(1)
+    print(doctest.testmod())
+    

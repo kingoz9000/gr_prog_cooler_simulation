@@ -1,30 +1,65 @@
+"""Dette modul styrer data for plottene.
+
+    Raises:
+        ValueError: Hvis duration ikke er 'day' eller 'week'.
+        ValueError: Hvis type ikke er 'simple' eller 'smart'.
+
+    Returns:
+       class : En instans af CoolingPlotter.
+"""
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from kølerum import Kølerum
-from monte_carlo import MonteCarlo
-from termostat import ThermostatSimple, ThermostatSmart
 
 
 class CoolingPlotter:
-    def __init__(self, months=10):
-        """Prepare data for plotting."""
-        mc_simple = MonteCarlo(Kølerum(thermostat=ThermostatSimple()))
-        mc_smart = MonteCarlo(Kølerum(thermostat=ThermostatSmart()))
+    def __init__(self, months=10, progress_bar=None, kølerum_simple=None, kølerum_smart=None, monte_carlo_class=None):
+        """Forbereder data til plottene.
 
-        self.simple_data = mc_simple.run_simulation(months)
-        self.smart_data = mc_smart.run_simulation(months)
+        Args:
+            months (int, optional): amount of months to simulate. Defaults to 10.
+            progress_bar (sg.ProgressBar, optional): to track progress of the simulation. Defaults to None.
+            monte_carlo_class (class, optional): an instance of the montecarlo class. Defaults to None.
+        """
+        
+        mc_simple = monte_carlo_class(kølerum_simple, progress_bar) # Monte Carlo for simple
+        mc_smart = monte_carlo_class(kølerum_smart, progress_bar) # Monte Carlo for smart
 
-        self.df_data_simple = pd.DataFrame(self.simple_data)
-        self.df_data_smart = pd.DataFrame(self.smart_data)
+        self.simple_data = mc_simple.run_simulation(months) # Simulerer for simple
+        self.smart_data = mc_smart.run_simulation(months) # Simulerer for smart
 
-        num_steps = len(self.df_data_simple["electricity_logs"][0])
+        self.df_data_simple = pd.DataFrame(self.simple_data) # Dataframe for simple
+        self.df_data_smart = pd.DataFrame(self.smart_data) # Dataframe for smart
 
-        self.x_hours = np.arange(num_steps) / 12
+        self.df_data_simple_average = (
+            self.df_data_simple["electricity_logs"].apply(sum).mean() +
+            self.df_data_simple["food_waste_logs"].apply(sum).mean()
+        ) 
+
+        self.df_data_smart_average = (
+            self.df_data_smart["electricity_logs"].apply(sum).mean() +
+            self.df_data_smart["food_waste_logs"].apply(sum).mean()
+        )
+        
+        
+        num_steps = len(self.df_data_simple["electricity_logs"][0]) # Antal steps
+        
+        # Ville gerne have dataet vist i steps af timer da dette er mere overskueligt
+        self.x_hours = np.arange(num_steps) / 12 
+
+
 
     def plot_weekly_electricity(self, type="simple"):
-        """Return a figure for weekly electricity consumption."""
+        """Retunerer et plot for ugentlig elforbrug.
+
+        Args:
+            type (str, optional): simple or smart thermostat. Defaults to "simple".
+
+        Returns:
+            fig: figure for the plot
+        """
         fig, ax = plt.subplots()
         if type == "simple":
             ax.plot(self.df_data_simple["electricity_logs"][0][:2160], label="Simple")
@@ -38,7 +73,17 @@ class CoolingPlotter:
         return fig
 
     def plot_weekly_electricity_cumsum(self, duration="week"):
-        """Return a figure for cumulative electricity consumption."""
+        """Returnerer et plot for akkumuleret elforbrug for en uge eller dag
+
+        Args:
+            duration (str, optional): week or day. Defaults to "week".
+
+        Raises:
+            ValueError: If duration is not 'day' or 'week'.
+
+        Returns:
+            fig: a figure for the plot
+        """
         simple_data_cumsum = np.asarray(
             self.df_data_simple["electricity_logs"][0]
         ).cumsum()
@@ -79,8 +124,7 @@ class CoolingPlotter:
         ax.text(
             0.95,
             0.95,
-            f"Total (Simple): {total_simple:.2f}\nTotal (Smart): {
-                total_smart:.2f}",
+            f"Total (Simple): {total_simple:.2f}\nTotal (Smart): {total_smart:.2f}",
             transform=ax.transAxes,
             fontsize=10,
             verticalalignment="top",
@@ -94,8 +138,20 @@ class CoolingPlotter:
         ax.grid(True, linestyle="--", alpha=0.7)
         return fig
 
-    def plot_weekly_temperature(self, duration="week", type="simple"):
-        """Return a figure for weekly temperature."""
+    def plot_temperature(self, duration="week", type="simple"):
+        """Returnerer et plot for temperaturændringer over en dag eller uge.
+
+        Args:
+            duration (str, optional): week or day. Defaults to "week".
+            type (str, optional): thermostat. Defaults to "simple".
+
+        Raises:
+            ValueError: If duration is not 'day' or 'week'.
+            ValueError: If type is not 'simple' or 'smart'.
+
+        Returns:
+            fig: a figure for the plot
+        """
         simple_data_temperature = np.asarray(self.df_data_simple["temperature_logs"][0])
         smart_data_temperature = np.asarray(self.df_data_smart["temperature_logs"][0])
 
@@ -108,7 +164,7 @@ class CoolingPlotter:
         else:
             raise ValueError("Invalid duration. Use 'day' or 'week'.")
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(10, 6))
         if type == "simple":
             ax.plot(self.x_hours[:end_index], simple_data_temperature[:end_index])
         elif type == "smart":
@@ -123,7 +179,11 @@ class CoolingPlotter:
         return fig
 
     def plot_histogram_cost(self):
-        """Return a figure for the histogram of costs."""
+        """Returnerer et histogram for totalpris for en måned.
+
+        Returns:
+            fig: a figure for the plot
+        """
         simple_costs = [
             e + f
             for e, f in zip(
@@ -139,7 +199,7 @@ class CoolingPlotter:
             )
         ]
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(10, 6))
         ax.hist(simple_costs, bins=30, alpha=0.7, color="blue", label="Simple")
         ax.hist(smart_costs, bins=30, alpha=0.7, color="orange", label="Smart")
         total_simple = sum(simple_costs)
