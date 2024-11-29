@@ -8,14 +8,13 @@ from abc import ABC, abstractmethod
 
 
 class Thermostat(ABC):
-    pass
 
     @abstractmethod
     def update_compressor(self):
-        pass
+        """
+        Noget om funktionen
+        """
 
-    def calculate_responsible_time_to_power_on(self):
-        pass
 
 
 class ThermostatSimple(Thermostat):
@@ -27,6 +26,13 @@ class ThermostatSimple(Thermostat):
 
 
 class ThermostatSemiSmart(Thermostat):
+    def __init__(self, energy_prices=None):
+        self.t_target = 6.4
+
+    def update_compressor(self, t_current, n):
+        return t_current > self.t_target
+
+class ThermostatSmart(Thermostat):
     def __init__(self, energy_prices=None):
         self.t_target = 6 
         self.n = 0

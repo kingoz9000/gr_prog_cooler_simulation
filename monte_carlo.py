@@ -25,10 +25,7 @@ class MonteCarlo:
             True
         """
         self.kølerum_template = kølerum # Kølerummet
-        self.temperature_logs = [] # Temperaturlog for hele simuleringen
-        self.electricity_logs = [] # Elforbrugslog for hele simuleringen
-        self.food_waste_logs = [] # Madspildslog for hele simuleringen
-        self.monthly_total_costs = [] # Samlet pris for hele simuleringen
+
         self.progress_bar = progress_bar # Progress bar for at vise fremdrift
         
     def run_simulation(self, months=12):
@@ -40,21 +37,24 @@ class MonteCarlo:
         Returns:
             dict: collected data from the simulation
         """
+        self.temperature_logs = [0 for i in range(months)] # Temperaturlog for hele simuleringen
+        self.electricity_logs = [0 for i in range(months)] # Elforbrugslog for hele simuleringen
+        self.food_waste_logs = [0 for i in range(months)] # Madspildslog for hele simuleringen
+        self.monthly_total_costs = [0 for i in range(months)] # Samlet pris for hele simuleringen
         for month in range(months):
             kølerum = Kølerum(thermostat=self.kølerum_template.termostat, energy_prices=self.kølerum_template.energy_prices) 
 
             month_data = kølerum.run_simulation() # Kører simuleringen for en måned
 
             # Samler dataen for hele simuleringen
-            self.temperature_logs.append(month_data["temperature_log"])
-            self.electricity_logs.append(month_data["electricity_log"])
-            self.food_waste_logs.append(month_data["food_waste_log"])
-            self.monthly_total_costs.append(month_data["total_cost"])
+            self.temperature_logs[month] = month_data["temperature_log"]
+            self.electricity_logs[month] = month_data["electricity_log"]
+            self.food_waste_logs[month] = month_data["food_waste_log"]
+            self.monthly_total_costs[month] = month_data["total_cost"]
             
             # Giver fremdrift til progress bar
             if self.progress_bar:
                 self.progress_bar.UpdateBar((month + 1) * 100 // months)
-                
         return {
             "temperature_logs": self.temperature_logs,
             "electricity_logs": self.electricity_logs,

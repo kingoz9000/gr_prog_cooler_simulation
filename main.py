@@ -4,7 +4,7 @@ Dette er main filen for kølerums simuleringen.
 @template: Tobias Kallehauge
 """
 
-from termostat import ThermostatSimple, ThermostatSemiSmart
+from termostat import ThermostatSimple, ThermostatSemiSmart, ThermostatSmart
 from kølerum import Kølerum
 from monte_carlo import MonteCarlo
 from dataframes import CoolingPlotter
@@ -65,7 +65,7 @@ window1 = sg.Window(
     "Kølerums Simulering",
     layout=layout1,
     finalize=True,
-    size=(1200, 800),
+    size=(1200, 1000),
     element_justification="center"
 )
 
@@ -78,13 +78,12 @@ cooling_plotter = None
 
 def create_cooling_plotter(N, thermostat_type, progress_bar):
     global cooling_plotter
-    print(energy_prices)
     if thermostat_type == "semi smart":
         kølerum_simple = Kølerum(thermostat=ThermostatSimple(energy_prices), energy_prices=energy_prices)
         kølerum_smart = Kølerum(thermostat=ThermostatSemiSmart(energy_prices), energy_prices=energy_prices)
     elif thermostat_type == "smart":
         kølerum_simple = Kølerum(thermostat=ThermostatSimple(energy_prices), energy_prices=energy_prices)
-        kølerum_smart = Kølerum(thermostat=ThermostatSemiSmart(energy_prices), energy_prices=energy_prices)
+        kølerum_smart = Kølerum(thermostat=ThermostatSmart(energy_prices), energy_prices=energy_prices)
     
     cooling_plotter = CoolingPlotter(N, progress_bar,kølerum_simple, kølerum_smart, MonteCarlo)
 
@@ -114,20 +113,36 @@ while True:
         
         window_loading.close()
         layout2 = [
-    [sg.Text("Cooling Plotter GUI")],
-    [sg.Button("Ugentlig akkumuleret elforbrug", key="-CUMSUM-")],
-    [sg.Button(f"Temperatur(Simple)", key="-TEMP_SIMPLE-"), 
-     sg.Button("Temperatur(Smart)", key="-TEMP_SMART-")],
-    # De gennemsnitlige priser (Kan være anderledes end histogrammet der viser for en måned)
-    [sg.Text(f"Simple gennemsnitlig pris: {cooling_plotter.df_data_simple_average}")],
-    [sg.Text(f"Smart gennemsnitlig pris: {cooling_plotter.df_data_smart_average}")],
-    [sg.Button("Histogram", key="-HISTOGRAM-")],
-    [sg.Canvas(key="-CANVAS-")],
+    [sg.Text("Cooling Plotter GUI", font=("Helvetica", 18), justification="center")],
+    [
+        sg.Frame(
+            "Gennemsnitlige Priser",
+            layout=[
+                [sg.Text(f"Simple gennemsnitlig pris: {cooling_plotter.df_data_simple_average:.2f} DKK",
+                         font=("Helvetica", 14),
+                         background_color="lightblue",
+                         pad=(10, 5))],
+                [sg.Text(f"Smart gennemsnitlig pris: {cooling_plotter.df_data_smart_average:.2f} DKK",
+                         font=("Helvetica", 14),
+                         background_color="lightgreen",
+                         pad=(10, 5))],
+            ],
+            font=("Helvetica", 16),
+            title_color="blue",
+            pad=(20, 10),
+        )
+    ],
+    [sg.Button("Ugentlig akkumuleret elforbrug", key="-CUMSUM-", size=(30, 2))],
+    [sg.Button(f"Temperatur (Simple)", key="-TEMP_SIMPLE-", size=(20, 2)), 
+     sg.Button("Temperatur (Smart)", key="-TEMP_SMART-", size=(20, 2))],
+    [sg.Button("Histogram", key="-HISTOGRAM-", size=(20, 2))],
+    [sg.Canvas(key="-CANVAS-", size=(1000, 600))],
 ]
+
         window2 = sg.Window(
             "Kølerums Simulering",
             layout=layout2,
-            size=(1200, 800),
+            size=(1200, 1000),
             finalize=True,
             element_justification="center"
         )
