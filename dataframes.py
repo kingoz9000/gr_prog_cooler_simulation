@@ -54,37 +54,15 @@ class CoolingPlotter:
         # Ville gerne have dataet vist i steps af timer da dette er mere overskueligt
         self.x_hours = np.arange(num_steps) / 12
 
-    def plot_weekly_electricity(self, type="simple"):
-        """Retunerer et plot for ugentlig elforbrug.
+
+    def plot_electricity_cumsum(self, duration="week"):
+        """Returnerer et plot for akkumuleret elforbrug for en uge, dag eller måned.
 
         Args:
-            type (str, optional): simple or smart thermostat. Defaults to "simple".
-
-        Returns:
-            fig: figure for the plot
-        """
-        fig, ax = plt.subplots()
-        if type == "simple":
-            ax.plot(
-                self.df_data_simple["electricity_logs"][0][:2160], label="Simple")
-        else:
-            ax.plot(self.df_data_smart["electricity_logs"]
-                    [0][:2160], label="Smart")
-
-        ax.set_title("Weekly Electricity Consumption")
-        ax.set_xlabel("Timet")
-        ax.set_ylabel("Electricity (kWh)")
-        ax.legend()
-        return fig
-
-    def plot_weekly_electricity_cumsum(self, duration="week"):
-        """Returnerer et plot for akkumuleret elforbrug for en uge eller dag
-
-        Args:
-            duration (str, optional): week or day. Defaults to "week".
+            duration (str, optional): week, day or month. Defaults to "week"
 
         Raises:
-            ValueError: If duration is not 'day' or 'week'.
+            ValueError: If duration is not 'day' or 'week' or 'month'.
 
         Returns:
             fig: a figure for the plot
@@ -132,8 +110,7 @@ class CoolingPlotter:
         ax.text(
             0.95,
             0.95,
-            f"Total (Simple): {total_simple:.2f}\nTotal (Smart): {
-                total_smart:.2f}",
+            f"Total (Simple): {total_simple:.2f}\nTotal (Smart): {total_smart:.2f}",
             transform=ax.transAxes,
             fontsize=10,
             verticalalignment="top",
@@ -146,6 +123,76 @@ class CoolingPlotter:
         ax.legend(loc="upper left")
         ax.grid(True, linestyle="--", alpha=0.7)
         return fig
+
+    def plot_food_waste_cumsum(self, duration="week"):
+        """Returnerer et plot for akkumuleret elforbrug for en uge, dag eller måned.
+
+        Args:
+            duration (str, optional): week, day or month. Defaults to "week"
+
+        Raises:
+            ValueError: If duration is not 'day' or 'week' or 'month'.
+
+        Returns:
+            fig: a figure for the plot
+        """
+        simple_data_cumsum = np.asarray(
+            self.df_data_simple["food_waste_logs"][0]
+        ).cumsum()
+        smart_data_cumsum = np.asarray(
+            self.df_data_smart["food_waste_logs"][0]
+        ).cumsum()
+
+        if duration == "day":
+            end_index = 24 * 12
+            title = "Akkumuleret madspild over én dag"
+        elif duration == "week":
+            end_index = 24 * 12 * 7
+            title = "Akkumuleret madspild over en uge(168 timer)"
+        elif duration == "month":
+            end_index = 24 * 12 * 30
+            title = "Akkumuleret madspild over en måned"
+        else:
+            raise ValueError("Invalid duration. Use 'day', 'week' or 'month'.")
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(
+            self.x_hours[:end_index],
+            simple_data_cumsum[:end_index],
+            label="Simple",
+            linewidth=2,
+            color="blue",
+        )
+        ax.plot(
+            self.x_hours[:end_index],
+            smart_data_cumsum[:end_index],
+            label="Smart",
+            linewidth=2,
+            color="orange",
+            linestyle="--",
+        )
+        # Calculate totals
+        total_simple = simple_data_cumsum[end_index - 1]
+        total_smart = smart_data_cumsum[end_index - 1]
+
+        # Add totals as text in the top-right corner
+        ax.text(
+            0.95,
+            0.95,
+            f"Total (Simple): {total_simple:.2f}\nTotal (Smart): {total_smart:.2f}",
+            transform=ax.transAxes,
+            fontsize=10,
+            verticalalignment="top",
+            horizontalalignment="right",
+            bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+        )
+        ax.set_title(title)
+        ax.set_xlabel("Timer")
+        ax.set_ylabel("Akkumuleret elforbrug")
+        ax.legend(loc="upper left")
+        ax.grid(True, linestyle="--", alpha=0.7)
+        return fig
+
 
     def plot_temperature(self, duration="week", type="simple"):
         """Returnerer et plot for temperaturændringer over en dag eller uge.
@@ -255,7 +302,7 @@ if __name__ == "__main__":
     with open("elpris.csv") as file:
         energy_prices = list(csv.DictReader(file))
 
-    months = 1000  
+    months = 10
 
 
     thermostat_simple = ThermostatSimple()
@@ -272,11 +319,14 @@ if __name__ == "__main__":
         kølerum_smart=kølerum_smart,
         monte_carlo_class=MonteCarlo,
     )
-    plotter.plot_weekly_electricity_cumsum(duration="week")
-    plotter.plot_weekly_electricity_cumsum(duration="day")
-    plotter.plot_weekly_electricity_cumsum(duration="month")
+    plotter.plot_electricity_cumsum(duration="week")
+    plotter.plot_electricity_cumsum(duration="day")
+    plotter.plot_electricity_cumsum(duration="month")
     plotter.plot_temperature(duration="week", type="simple")
     plotter.plot_temperature(duration="week", type="smart")
     plotter.plot_histogram_cost()
+    plotter.plot_food_waste_cumsum(duration="week")
+    plotter.plot_food_waste_cumsum(duration="day")
+    plotter.plot_food_waste_cumsum(duration="month")
     plt.show()
 

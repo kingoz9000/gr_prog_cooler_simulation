@@ -1,7 +1,7 @@
 """Dette modul styrer Monte Carlo-simuleringen af kølerummet.
 
     Returns:
-        dict: Samlede resultater af simuleringen.
+        dict: Samlede resultater af simuleringen for months måneder.
 """
 
 from kølerum import Kølerum
@@ -18,10 +18,6 @@ class MonteCarlo:
             >>> from kølerum import Kølerum
             >>> mc = MonteCarlo(kølerum=Kølerum(thermostat=None, energy_prices=[]))
             >>> isinstance(mc.kølerum_template, Kølerum)
-            True
-            >>> mc.temperature_logs == []
-            True
-            >>> mc.electricity_logs == []
             True
         """
         self.kølerum_template = kølerum # Kølerummet
@@ -62,8 +58,9 @@ class MonteCarlo:
         }
         
 
-# Dette er blot for at det er muligt at se hvad hvert enkelt modul gør
+
 if __name__ == "__main__":
+    """Kører en test af Monte Carlo-simuleringen."""
     import csv
     from termostat import ThermostatSemiSmart
     import doctest

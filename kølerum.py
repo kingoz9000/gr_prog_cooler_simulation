@@ -1,3 +1,8 @@
+"""Dette modul kører simuleringen af kølerummet for en måned.
+
+    Returns:
+        _type_: dict - Samlet data for simuleringen af kølerummet for en måned
+"""
 import math
 import random
 
@@ -21,10 +26,8 @@ class Kølerum:
         self.food_waste = [0 for i in range(8640)]  # Madspild
         self.temps = [0 for i in range(8640)]  # Temperatur
         self.electricity_cost = [0 for i in range(8640)]  # Elpris  # Samlet pris
-        # Opens electricity prices
 
         self.energy_prices = energy_prices
-        # Picks thermostat
         self.termostat = thermostat
 
     def decide_constants(self, door: bool, compressor: bool) -> float:
@@ -138,8 +141,8 @@ class Kølerum:
         return self.sum_up_cost()
 
 
-# Dette er blot for at det er muligt at se hvad hvert enkelt modul gør
 if __name__ == "__main__":
+    """Dette er blot for at det er muligt at se hvad hvert enkelt modul gør og køre doctest"""
     import csv
     import doctest
 

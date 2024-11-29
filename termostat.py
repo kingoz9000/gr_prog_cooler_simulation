@@ -12,7 +12,7 @@ class Thermostat(ABC):
     @abstractmethod
     def update_compressor(self):
         """
-        Noget om funktionen
+        Bestemmer om kompressoren skal tændes.
         """
 
 
@@ -43,12 +43,16 @@ class ThermostatSmart(Thermostat):
             self.energy_prices = energy_prices
 
     def update_compressor(self, t_current, n):
-        future_prices = [float(row["Pris"]) for row in self.energy_prices[n : n + 5]]
-        average_future_price = sum(future_prices) / len(future_prices)
-        if t_current > self.t_target:
-            if 4 < t_current > 6:
-                return True
-            elif average_future_price > float(self.energy_prices[self.n]["Pris"]):
-                return True
-            else:
-                return False
+        current_price = float(self.energy_prices[n]["Pris"])
+        if current_price < 1:
+            return True
+        elif current_price < 2 and t_current > self.t_target:
+            return True
+        elif t_current > self.t_target and current_price < 3:
+            return True
+        elif t_current > self.t_target:
+            return True
+        
+        
+
+        
