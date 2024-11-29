@@ -57,7 +57,7 @@ class Kølerum:
 
         Args:
             percentage (float, optional): Procent chance for at døren er åben (10%). Defaults to 0.1.
-
+            Yes
         Returns:
             _type_: bool - True if open
         Examples:
