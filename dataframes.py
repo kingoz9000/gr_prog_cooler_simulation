@@ -13,7 +13,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 
-
 class CoolingPlotter:
     def __init__(self, months=10, progress_bar=None, kølerum_simple=None, kølerum_smart=None, monte_carlo_class=None):
         """Forbereder data til plottene.
@@ -23,33 +22,37 @@ class CoolingPlotter:
             progress_bar (sg.ProgressBar, optional): to track progress of the simulation. Defaults to None.
             monte_carlo_class (class, optional): an instance of the montecarlo class. Defaults to None.
         """
-        
-        mc_simple = monte_carlo_class(kølerum_simple, progress_bar) # Monte Carlo for simple
-        mc_smart = monte_carlo_class(kølerum_smart, progress_bar) # Monte Carlo for smart
 
-        self.simple_data = mc_simple.run_simulation(months) # Simulerer for simple
-        self.smart_data = mc_smart.run_simulation(months) # Simulerer for smart
+        mc_simple = monte_carlo_class(
+            kølerum_simple, progress_bar)  # Monte Carlo for simple
+        mc_smart = monte_carlo_class(
+            kølerum_smart, progress_bar)  # Monte Carlo for smart
 
-        self.df_data_simple = pd.DataFrame(self.simple_data) # Dataframe for simple
-        self.df_data_smart = pd.DataFrame(self.smart_data) # Dataframe for smart
+        self.simple_data = mc_simple.run_simulation(
+            months)  # Simulerer for simple
+        self.smart_data = mc_smart.run_simulation(
+            months)  # Simulerer for smart
+
+        self.df_data_simple = pd.DataFrame(
+            self.simple_data)  # Dataframe for simple
+        self.df_data_smart = pd.DataFrame(
+            self.smart_data)  # Dataframe for smart
 
         self.df_data_simple_average = (
             self.df_data_simple["electricity_logs"].apply(sum).mean() +
             self.df_data_simple["food_waste_logs"].apply(sum).mean()
-        ) 
+        )
 
         self.df_data_smart_average = (
             self.df_data_smart["electricity_logs"].apply(sum).mean() +
             self.df_data_smart["food_waste_logs"].apply(sum).mean()
         )
-        
-        
-        num_steps = len(self.df_data_simple["electricity_logs"][0]) # Antal steps
-        
+
+        # Antal steps
+        num_steps = len(self.df_data_simple["electricity_logs"][0])
+
         # Ville gerne have dataet vist i steps af timer da dette er mere overskueligt
-        self.x_hours = np.arange(num_steps) / 12 
-
-
+        self.x_hours = np.arange(num_steps) / 12
 
     def plot_weekly_electricity(self, type="simple"):
         """Retunerer et plot for ugentlig elforbrug.
@@ -62,9 +65,11 @@ class CoolingPlotter:
         """
         fig, ax = plt.subplots()
         if type == "simple":
-            ax.plot(self.df_data_simple["electricity_logs"][0][:2160], label="Simple")
+            ax.plot(
+                self.df_data_simple["electricity_logs"][0][:2160], label="Simple")
         else:
-            ax.plot(self.df_data_smart["electricity_logs"][0][:2160], label="Smart")
+            ax.plot(self.df_data_smart["electricity_logs"]
+                    [0][:2160], label="Smart")
 
         ax.set_title("Weekly Electricity Consumption")
         ax.set_xlabel("Timet")
@@ -97,8 +102,11 @@ class CoolingPlotter:
         elif duration == "week":
             end_index = 24 * 12 * 7
             title = "Akkumuleret elforbrug over en uge(168 timer)"
+        elif duration == "month":
+            end_index = 24 * 12 * 30
+            title = "Akkumuleret elforbrug over en måned"
         else:
-            raise ValueError("Invalid duration. Use 'day' or 'week'.")
+            raise ValueError("Invalid duration. Use 'day', 'week' or 'month'.")
 
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.plot(
@@ -124,7 +132,8 @@ class CoolingPlotter:
         ax.text(
             0.95,
             0.95,
-            f"Total (Simple): {total_simple:.2f}\nTotal (Smart): {total_smart:.2f}",
+            f"Total (Simple): {total_simple:.2f}\nTotal (Smart): {
+                total_smart:.2f}",
             transform=ax.transAxes,
             fontsize=10,
             verticalalignment="top",
@@ -152,8 +161,10 @@ class CoolingPlotter:
         Returns:
             fig: a figure for the plot
         """
-        simple_data_temperature = np.asarray(self.df_data_simple["temperature_logs"][0])
-        smart_data_temperature = np.asarray(self.df_data_smart["temperature_logs"][0])
+        simple_data_temperature = np.asarray(
+            self.df_data_simple["temperature_logs"][0])
+        smart_data_temperature = np.asarray(
+            self.df_data_smart["temperature_logs"][0])
 
         if duration == "day":
             end_index = 24 * 12  # 60/5 = 12
@@ -166,9 +177,11 @@ class CoolingPlotter:
 
         fig, ax = plt.subplots(figsize=(10, 6))
         if type == "simple":
-            ax.plot(self.x_hours[:end_index], simple_data_temperature[:end_index])
+            ax.plot(self.x_hours[:end_index],
+                    simple_data_temperature[:end_index])
         elif type == "smart":
-            ax.plot(self.x_hours[:end_index], smart_data_temperature[:end_index])
+            ax.plot(self.x_hours[:end_index],
+                    smart_data_temperature[:end_index])
         else:
             raise ValueError("Invalid type. Use 'simple' or 'smart'.")
 
@@ -230,3 +243,40 @@ class CoolingPlotter:
         ax.legend()
         ax.grid(axis="y", linestyle="--", alpha=0.7)
         return fig
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import csv
+    from monte_carlo import MonteCarlo
+    from kølerum import Kølerum
+    from termostat import ThermostatSimple, ThermostatSemiSmart
+
+
+    with open("elpris.csv") as file:
+        energy_prices = list(csv.DictReader(file))
+
+    months = 1000  
+
+
+    thermostat_simple = ThermostatSimple()
+    thermostat_smart = ThermostatSemiSmart()
+    kølerum_simple = Kølerum(thermostat_simple, energy_prices)
+    kølerum_smart = Kølerum(thermostat_smart, energy_prices)
+    monte_carlo_simple = MonteCarlo(kølerum_simple) 
+    monte_carlo_smart = MonteCarlo(kølerum_smart)
+
+
+    plotter = CoolingPlotter(
+        months=months,
+        kølerum_simple=kølerum_simple,
+        kølerum_smart=kølerum_smart,
+        monte_carlo_class=MonteCarlo,
+    )
+    plotter.plot_weekly_electricity_cumsum(duration="week")
+    plotter.plot_weekly_electricity_cumsum(duration="day")
+    plotter.plot_weekly_electricity_cumsum(duration="month")
+    plotter.plot_temperature(duration="week", type="simple")
+    plotter.plot_temperature(duration="week", type="smart")
+    plotter.plot_histogram_cost()
+    plt.show()
+
