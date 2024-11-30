@@ -193,7 +193,6 @@ class CoolingPlotter:
         ax.grid(True, linestyle="--", alpha=0.7)
         return fig
 
-
     def plot_temperature(self, duration="week", type="simple"):
         """Returnerer et plot for temperaturændringer over en dag eller uge.
 
@@ -291,27 +290,24 @@ class CoolingPlotter:
         ax.grid(axis="y", linestyle="--", alpha=0.7)
         return fig
 
+
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
     import csv
     from monte_carlo import MonteCarlo
     from kølerum import Kølerum
-    from termostat import ThermostatSimple, ThermostatSemiSmart
-
+    from termostat import ThermostatSimple, ThermostatSemiSmart, ThermostatSmart
 
     with open("elpris.csv") as file:
         energy_prices = list(csv.DictReader(file))
 
-    months = 10
-
+    months = 10000
 
     thermostat_simple = ThermostatSimple()
-    thermostat_smart = ThermostatSemiSmart()
+    thermostat_smart = ThermostatSmart(energy_prices)
     kølerum_simple = Kølerum(thermostat_simple, energy_prices)
     kølerum_smart = Kølerum(thermostat_smart, energy_prices)
-    monte_carlo_simple = MonteCarlo(kølerum_simple) 
+    monte_carlo_simple = MonteCarlo(kølerum_simple)
     monte_carlo_smart = MonteCarlo(kølerum_smart)
-
 
     plotter = CoolingPlotter(
         months=months,
@@ -319,6 +315,10 @@ if __name__ == "__main__":
         kølerum_smart=kølerum_smart,
         monte_carlo_class=MonteCarlo,
     )
+
+    print(plotter.df_data_simple_average)
+    print(plotter.df_data_smart_average)
+
     plotter.plot_electricity_cumsum(duration="week")
     plotter.plot_electricity_cumsum(duration="day")
     plotter.plot_electricity_cumsum(duration="month")

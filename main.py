@@ -82,14 +82,28 @@ layout1 = [
                         ],
                         [
                             sg.Text(
-                                f"Det smarte...",
+                                f"Det smarte termostat har en måltemperatur på 6.2 grader og en lavere grænse på 3 grader.",
                                 font=("Helvetica", 14),
                                 pad=(10, 5),
                             )
                         ],
                         [
                             sg.Text(
+                                f"Uderover dette har tænder termostatet altid når prisen er på 2 DKK så længde den er under halvejs i måneden",
+                                font=("Helvetica", 14),
+                                pad=(10, 5),
+                            )
+                        ],                       ],
+                        [
+                            sg.Text(
                                 f"OBS simuleringen bliver kørt for både det simple og det smarte/semi-smarte termostat. Derfor kan der være meget langsomt ved større N.",
+                                font=("Helvetica", 14),
+                                pad=(10, 5),
+                            )
+                        ],
+                        [
+                            sg.Text(
+                                f"Derfor kan der være meget langsomt ved større N.",
                                 font=("Helvetica", 14),
                                 pad=(10, 5),
                             )
@@ -101,13 +115,11 @@ layout1 = [
                                 pad=(10, 5),
                              )
                         ],
-                    ],
                     font=("Helvetica", 16),
                     title_color="blue",
                     pad=(20, 10),
-                )
-            ],
     
+    ]
 ]
 # Define the GUI layout
 
