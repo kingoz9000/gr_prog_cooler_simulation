@@ -1,4 +1,4 @@
-"""Dette modul styrer Monte Carlo-simuleringen af kølerummet.
+"""Dette modul styrer Monte Carlo-simuleringen af kølerummet og bliver brugt i plotter.
 
     Returns:
         dict: Samlede resultater af simuleringen for months måneder.
@@ -69,6 +69,6 @@ if __name__ == "__main__":
 
     monte_carlo = MonteCarlo(Kølerum(ThermostatSemiSmart(energy_prices), energy_prices))
     
-    monte_carlo.run_simulation(1)
+    print(monte_carlo.run_simulation(1)) # Mere data
     print(doctest.testmod())
     

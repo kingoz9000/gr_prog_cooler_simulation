@@ -1,36 +1,33 @@
 # -*- coding: utf-8 -*-
 """
-Dette er main filen for kølerums simuleringen med en GUI. Der er brugt template og koden er rodet
-og ikke optimeret. 
+Dette er main filen for kølerums simuleringen med en GUI. Der er brugt template 
+og koden er en smule rodet og ikke optimeret.
 @template: Tobias Kallehauge
 """
 
 import csv
 import threading
 
-# import various funtions from matplotlib
+
 import matplotlib
 import matplotlib.pyplot as plt
 import PySimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from dataframes import CoolingPlotter
+from plotter import CoolingPlotter
 from kølerum import Kølerum
 from monte_carlo import MonteCarlo
 from termostat import ThermostatSemiSmart, ThermostatSimple, ThermostatSmart
 
-# =============================================================================
-# Setup some helper funtioncs for plotting
-# =============================================================================
 
+
+# Indlæser elpriserne
 with open("elpris.csv") as elpris:
     energy_prices = list(csv.DictReader(elpris))
-# Use the TkAgg backend for embedding matplotlib plots in the GUI
+
 matplotlib.use("TkAgg")
 
-# =============================================================================
-# Helper Functions
-# =============================================================================
+
 
 
 def draw_figure(canvas, figure):
@@ -51,11 +48,7 @@ def delete_fig(fig):
     plt.close("all")
 
 
-# =============================================================================
-# GUI Layout and Main Loop
-# =============================================================================
-
-
+# Lauyout til første vindue
 layout1 = [
     [sg.Text("Vælg antal måneder")],
     [sg.Combo(["10", "100", "1000", "10000"], default_value="10", key="N")],
@@ -93,17 +86,10 @@ layout1 = [
                                 font=("Helvetica", 14),
                                 pad=(10, 5),
                             )
-                        ],                       ],
+                        ],                       
                         [
                             sg.Text(
-                                f"OBS simuleringen bliver kørt for både det simple og det smarte/semi-smarte termostat. Derfor kan der være meget langsomt ved større N.",
-                                font=("Helvetica", 14),
-                                pad=(10, 5),
-                            )
-                        ],
-                        [
-                            sg.Text(
-                                f"Derfor kan der være meget langsomt ved større N.",
+                                f"OBS simuleringen bliver kørt for både det simple og det smarte/semi-smarte termostat.",
                                 font=("Helvetica", 14),
                                 pad=(10, 5),
                             )
@@ -115,15 +101,16 @@ layout1 = [
                                 pad=(10, 5),
                              )
                         ],
+                    ],
                     font=("Helvetica", 16),
                     title_color="blue",
                     pad=(20, 10),
-    
-    ]
-]
-# Define the GUI layout
+                    )   
+            ],
+    ]   
 
 
+# Første vindue setup
 window1 = sg.Window(
     "Kølerums Simulering",
     layout=layout1,
@@ -132,14 +119,21 @@ window1 = sg.Window(
     element_justification="center",
 )
 
-
-# Variable to track the currently displayed figure
+# Fra template
 fig_gui = None
 cooling_plotter = None
 
 
 def create_cooling_plotter(N, thermostat_type, progress_bar):
-    global cooling_plotter
+    """Bestemmer hvilken termostat der skal bruges og kører simuleringen.
+
+    Args:
+        N (int): Antal simulationer
+        thermostat_type (str): Hviket termostat der skal bruges
+        progress_bar (sg.ProgressBar): Bare en loading bar der skal have fremdrift af monte carlo
+    """
+    global cooling_plotter # Gad ikke putte alt i en klasse når det er gui
+    # Forskellige termostater
     if thermostat_type == "semi smart":
         kølerum_simple = Kølerum(
             thermostat=ThermostatSimple(energy_prices), energy_prices=energy_prices
@@ -154,21 +148,22 @@ def create_cooling_plotter(N, thermostat_type, progress_bar):
         kølerum_smart = Kølerum(
             thermostat=ThermostatSmart(energy_prices), energy_prices=energy_prices
         )
-
+    # Kører simuleringen
     cooling_plotter = CoolingPlotter(
         N, progress_bar, kølerum_simple, kølerum_smart, MonteCarlo
     )
 
-
+# Main loop 1
 while True:
+    # Første vindue
     event, values = window1.read()
     if event == sg.WIN_CLOSED:
         break
+    
     if event == "-KØR-":
-
         N = int(values["N"])
         thermostat_type = values["THERMOSTAT"]
-        # Create a loading bar window
+        # Loading bar
         layout_loading = [
             [sg.Text("Loading...")],
             [sg.ProgressBar(100, orientation="h",
@@ -177,20 +172,21 @@ while True:
         window_loading = sg.Window("Loading", layout_loading, finalize=True)
         progress_bar = window_loading["-PROG-"]
 
-        # Start the CoolingPlotter creation in a separate thread
+        # Kører simulation i en anden thread
         thread = threading.Thread(
             target=create_cooling_plotter, args=(
                 N, thermostat_type, progress_bar)
         )
         thread.start()
         window1.close()
-        # Update the progress bar while the thread is running
+        # Opdaterer loading bar
         while thread.is_alive():
             event, _ = window_loading.read(timeout=100)
             if event == sg.WIN_CLOSED:
                 break
-
+        # Endelig færdig:)
         window_loading.close()
+        # Layout til andet vindue
         layout2 = [
             [
                 sg.Text(
@@ -240,6 +236,7 @@ while True:
             [sg.Canvas(key="-CANVAS-", size=(1000, 600))],
         ]
 
+        # Andet vindue setup
         window2 = sg.Window(
             "Kølerums Simulering",
             layout=layout2,
@@ -248,19 +245,18 @@ while True:
             element_justification="center",
         )
 
+        # Main loop 2
         while True:
             event, values = window2.read()
-
-            # Exit the loop if the window is closed
             if event == sg.WIN_CLOSED:
                 break
-                # Handle plotting events
+            
+            # Plots
             if event in ("-CUMSUM-", "-TEMP_SIMPLE-", "-TEMP_SMART-", "-HISTOGRAM-", "-FOODCUMSUM-"):
-                # Delete the previous figure, if any
                 if fig_gui:
                     delete_fig(fig_gui)
 
-                # Generate the appropriate plot
+                # Alle de forskellige plots med forskellige intervaller
                 if event == "-CUMSUM-":
                     el_duration = values["ELDURATION"]
                     if el_duration == "Uge":
@@ -312,9 +308,8 @@ while True:
                 elif event == "-HISTOGRAM-":
                     fig = cooling_plotter.plot_histogram_cost()
 
-                # Embed the new plot into the GUI
+                # Fra template
                 fig_gui = draw_figure(window2["-CANVAS-"].TKCanvas, fig)
 
-# Close the GUI and clean up
 plt.close("all")
 window2.close()

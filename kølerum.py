@@ -1,4 +1,4 @@
-"""Dette modul kører simuleringen af kølerummet for en måned.
+"""Dette modul kører simuleringen af kølerummet for en måned og bliver brugt i Monte Carlo.
 
     Returns:
         _type_: dict - Samlet data for simuleringen af kølerummet for en måned
@@ -27,8 +27,8 @@ class Kølerum:
         self.temps = [0 for i in range(8640)]  # Temperatur
         self.electricity_cost = [0 for i in range(8640)]  # Elpris  # Samlet pris
 
-        self.energy_prices = energy_prices
-        self.termostat = thermostat
+        self.energy_prices = energy_prices # Elpriser
+        self.termostat = thermostat # Termostat
 
     def decide_constants(self, door: bool, compressor: bool) -> float:
         """Bestemmer hvilke konstanter der skal bruges til at beregne temperaturen
@@ -146,14 +146,13 @@ if __name__ == "__main__":
     import csv
     import doctest
 
-    from termostat import ThermostatSemiSmart, ThermostatSimple
+    from termostat import ThermostatSemiSmart
 
     with open("elpris.csv") as elpris:
         energy_prices = list(csv.DictReader(elpris))
 
-    # Create an instance of ThermostatSemiSmart
     thermostat = ThermostatSemiSmart(energy_prices)
 
-    # Create an instance of Kølerum with the thermostat instance
     KØL = Kølerum(thermostat=thermostat, energy_prices=energy_prices)
+    print(KØL.run_simulation()) # En masse data
     print(doctest.testmod())

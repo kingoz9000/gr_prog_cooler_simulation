@@ -1,12 +1,4 @@
-"""Dette modul styrer data for plottene.
-
-    Raises:
-        ValueError: Hvis duration ikke er 'day' eller 'week'.
-        ValueError: Hvis type ikke er 'simple' eller 'smart'.
-
-    Returns:
-       class : En instans af CoolingPlotter.
-"""
+"""Dette modul styrer data for plottene og bliver importeret ind i main."""
 
 import numpy as np
 import pandas as pd
@@ -193,6 +185,7 @@ class CoolingPlotter:
         ax.grid(True, linestyle="--", alpha=0.7)
         return fig
 
+
     def plot_temperature(self, duration="week", type="simple"):
         """Returnerer et plot for temperaturændringer over en dag eller uge.
 
@@ -232,8 +225,8 @@ class CoolingPlotter:
             raise ValueError("Invalid type. Use 'simple' or 'smart'.")
 
         ax.set_title(title + f" ({type.capitalize()})")
-        ax.set_xlabel("Time (hours)")
-        ax.set_ylabel("Temperature (°C)")
+        ax.set_xlabel("Timer")
+        ax.set_ylabel("Temperatur (°C)")
         ax.grid(True)
         return fig
 
@@ -290,24 +283,28 @@ class CoolingPlotter:
         ax.grid(axis="y", linestyle="--", alpha=0.7)
         return fig
 
-
 if __name__ == "__main__":
+    """Kører bare igennem og plotter alle plottene."""
+    import matplotlib.pyplot as plt
     import csv
     from monte_carlo import MonteCarlo
     from kølerum import Kølerum
-    from termostat import ThermostatSimple, ThermostatSemiSmart, ThermostatSmart
+    from termostat import ThermostatSimple, ThermostatSemiSmart
+
 
     with open("elpris.csv") as file:
         energy_prices = list(csv.DictReader(file))
 
-    months = 10000
+    months = 10
+
 
     thermostat_simple = ThermostatSimple()
-    thermostat_smart = ThermostatSmart(energy_prices)
+    thermostat_smart = ThermostatSemiSmart()
     kølerum_simple = Kølerum(thermostat_simple, energy_prices)
     kølerum_smart = Kølerum(thermostat_smart, energy_prices)
-    monte_carlo_simple = MonteCarlo(kølerum_simple)
+    monte_carlo_simple = MonteCarlo(kølerum_simple) 
     monte_carlo_smart = MonteCarlo(kølerum_smart)
+
 
     plotter = CoolingPlotter(
         months=months,
@@ -315,10 +312,6 @@ if __name__ == "__main__":
         kølerum_smart=kølerum_smart,
         monte_carlo_class=MonteCarlo,
     )
-
-    print(plotter.df_data_simple_average)
-    print(plotter.df_data_smart_average)
-
     plotter.plot_electricity_cumsum(duration="week")
     plotter.plot_electricity_cumsum(duration="day")
     plotter.plot_electricity_cumsum(duration="month")
