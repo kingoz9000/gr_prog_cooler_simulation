@@ -158,7 +158,7 @@ while True:
     # Første vindue
     event, values = window1.read()
     if event == sg.WIN_CLOSED:
-        break
+        exit()
     
     if event == "-KØR-":
         N = int(values["N"])
@@ -183,7 +183,7 @@ while True:
         while thread.is_alive():
             event, _ = window_loading.read(timeout=100)
             if event == sg.WIN_CLOSED:
-                break
+                exit()
         # Endelig færdig:)
         window_loading.close()
         # Layout til andet vindue
